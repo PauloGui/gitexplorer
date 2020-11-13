@@ -4,7 +4,7 @@ import api from '../../services/api';
 
 import logoImg from '../../assets/image/logo.svg';
 
-import { Title, Form, Repositores } from './styles';
+import { Title, Form, Repositores, Error } from './styles';
 
 interface Repository {
   // eslint-disable-next-line camelcase
@@ -19,6 +19,7 @@ interface Repository {
 
 const Dashboard: React.FC = () => {
   const [newRepo, setNewRepo] = useState('');
+  const [inputError, setInputError] = useState('');
   const [repositories, setRepositories] = useState<Repository[]>([]);
 
   async function handleAddRespository(
@@ -26,12 +27,21 @@ const Dashboard: React.FC = () => {
   ): Promise<void> {
     event.preventDefault();
 
-    const response = await api.get<Repository>(`repos/${newRepo}`);
+    if (!newRepo) {
+      setInputError('Digite o autor/repositorio');
+      return;
+    }
+    try {
+      const response = await api.get<Repository>(`repos/${newRepo}`);
 
-    const repository = response.data;
+      const repository = response.data;
 
-    setRepositories([...repositories, repository]);
-    setNewRepo('');
+      setRepositories([...repositories, repository]);
+      setNewRepo('');
+      setInputError('');
+    } catch {
+      setInputError('Erro ao buscar o repositorio');
+    }
   }
 
   return (
@@ -39,7 +49,7 @@ const Dashboard: React.FC = () => {
       <img src={logoImg} alt="Explore o github" />
       <Title>Explore repositórios no GitHub.</Title>
 
-      <Form onSubmit={handleAddRespository}>
+      <Form hasError={!!inputError} onSubmit={handleAddRespository}>
         <input
           value={newRepo}
           onChange={(e): void => setNewRepo(e.target.value)}
@@ -47,6 +57,8 @@ const Dashboard: React.FC = () => {
         />
         <button type="submit">Explorar</button>
       </Form>
+
+      {inputError && <Error>{inputError}</Error>}
 
       <Repositores>
         {repositories.map(repository => (
